@@ -1,0 +1,65 @@
+[
+  {
+    "id": "LH-1",
+    "category": "split_aggregate",
+    "title": "Two $40,000 orders to the same vendor, 3 hours apart",
+    "initial_allows": true,
+    "improved_allows": false
+  },
+  {
+    "id": "LH-2",
+    "category": "wrong_scope",
+    "title": "Approval names a different vendor",
+    "initial_allows": true,
+    "improved_allows": false
+  },
+  {
+    "id": "LH-3",
+    "category": "wrong_identity",
+    "title": "Approver is a manager, not a director",
+    "initial_allows": true,
+    "improved_allows": false
+  },
+  {
+    "id": "LH-4",
+    "category": "wrong_identity",
+    "title": "Requester approves their own request",
+    "initial_allows": true,
+    "improved_allows": false
+  },
+  {
+    "id": "LH-5",
+    "category": "stale_evidence",
+    "title": "Approval expired before the request",
+    "initial_allows": true,
+    "improved_allows": false
+  },
+  {
+    "id": "LH-6",
+    "category": "timing_reversal",
+    "title": "Approval issued after the purchase order",
+    "initial_allows": true,
+    "improved_allows": false
+  },
+  {
+    "id": "LH-7",
+    "category": "replay_reuse",
+    "title": "Same approval reused for a second order",
+    "initial_allows": true,
+    "improved_allows": false
+  },
+  {
+    "id": "LH-8",
+    "category": "boundary",
+    "title": "Approval cap is below the commitment",
+    "initial_allows": true,
+    "improved_allows": false
+  },
+  {
+    "id": "LH-9",
+    "category": "alternate_currency",
+    "title": "EUR 70,000 with no USD conversion record",
+    "initial_allows": true,
+    "improved_allows": false
+  }
+]

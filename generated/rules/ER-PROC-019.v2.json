@@ -1,0 +1,46 @@
+{
+  "rule_id": "ER-PROC-019",
+  "version": 2,
+  "plain_english": "Aggregate commitments to the same vendor above $50,000 within 24 hours require a valid director approval scoped to that vendor and commitment. Missing evidence means refuse.",
+  "effect": {
+    "resource": "purchase_order",
+    "action": "create"
+  },
+  "params": {
+    "threshold": 50000,
+    "currency": "USD",
+    "aggregate": {
+      "by": "vendor",
+      "window_hours": 24
+    },
+    "approval": {
+      "role": "director",
+      "check_role": true,
+      "scoped_to_vendor": true,
+      "must_precede_request": true,
+      "must_not_be_expired": true,
+      "single_use": true,
+      "no_self_approval": true,
+      "cap_covers_commitment": true,
+      "currency_must_match": true
+    }
+  },
+  "evidence_citations": [
+    "EV-01",
+    "EV-02"
+  ],
+  "assumptions": [
+    "$50,000 is the existing director-approval threshold",
+    "24 hours is the aggregation window chosen by the business owner"
+  ],
+  "missing_evidence": [
+    "the agent's prompt or policy text at the time of the incident"
+  ],
+  "approval": {
+    "approver_name": "J. Ellis",
+    "approver_role": "Director of Procurement Operations",
+    "approved_at": "2026-09-16T00:00:00Z",
+    "rationale": "Split orders were not considered until the loophole check. Aggregating by vendor over 24 hours matches how the team already thinks about vendor exposure.",
+    "edited": false
+  }
+}

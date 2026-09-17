@@ -1,0 +1,25 @@
+{
+  "name": "everrule",
+  "private": true,
+  "version": "0.1.0",
+  "description": "EverRule turns a costly AI-agent incident into an owner-approved, loophole-tested prevention rule. Phase 0.5 working demo.",
+  "packageManager": "pnpm@10.34.5",
+  "scripts": {
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "build": "pnpm --filter @everrule/web build",
+    "dev": "pnpm --filter @everrule/web dev",
+    "generate": "node --import tsx scripts/generate.ts",
+    "generate:check": "node --import tsx scripts/generate.ts --check"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "tsx": "^4",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@everrule/loophole-engine": "workspace:*",
+    "@everrule/policy-generator": "workspace:*",
+    "@everrule/rule-tests": "workspace:*"
+  }
+}

@@ -1,0 +1,5 @@
+record_type,record_id,vendor_id,amount,currency,status,timestamp,note
+purchase_order,PO-88219,VEND-2291,78000,USD,created,2026-08-17T14:02:11Z,SYNTHETIC demo data
+approval_lookup,APR-QUERY-0817,VEND-2291,,USD,no_record,2026-08-17T14:02:11Z,no director approval found for vendor in 2026-08
+purchase_order,PO-88219,VEND-2291,78000,USD,cancelled,2026-08-19T09:40:00Z,cancelled by accounts payable
+fee,FEE-3310,VEND-2291,2100,USD,paid,2026-08-19T09:41:00Z,vendor cancellation fee

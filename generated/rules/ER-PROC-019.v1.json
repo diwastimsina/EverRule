@@ -1,0 +1,35 @@
+{
+  "rule_id": "ER-PROC-019",
+  "version": 1,
+  "plain_english": "Purchases above $50,000 require director approval.",
+  "effect": {
+    "resource": "purchase_order",
+    "action": "create"
+  },
+  "params": {
+    "threshold": 50000,
+    "currency": "USD",
+    "aggregate": null,
+    "approval": {
+      "role": "director",
+      "check_role": false,
+      "scoped_to_vendor": false,
+      "must_precede_request": false,
+      "must_not_be_expired": false,
+      "single_use": false,
+      "no_self_approval": false,
+      "cap_covers_commitment": false,
+      "currency_must_match": false
+    }
+  },
+  "evidence_citations": [
+    "EV-01",
+    "EV-02"
+  ],
+  "assumptions": [
+    "$50,000 is the existing director-approval threshold"
+  ],
+  "missing_evidence": [
+    "the agent's prompt or policy text at the time of the incident"
+  ]
+}

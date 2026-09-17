@@ -6,7 +6,20 @@ When an AI agent takes a costly action it should not have, EverRule turns that i
 
 ## Status
 
-Phase 0: customer discovery. No product build until the continue rule in `docs/everrule-solo-build-plan.md` is met.
+Phase 0.5: working demo. One synthetic incident, upload to PR artifact, deployed from this repo. Definition of done and scope: `docs/everrule-solo-build-plan.md` section 4. After that, Phase 1 discovery.
+
+## Run the demo
+
+```
+pnpm install
+pnpm dev
+```
+
+Open http://localhost:3100 and click **Analyze incident**. Details in `docs/demo.md`; how it fits together in `docs/architecture.md`.
+
+```
+pnpm typecheck && pnpm test && pnpm build && pnpm generate:check
+```
 
 ## Documents
 
@@ -25,7 +38,11 @@ Canonical hierarchy when documents differ, highest first:
 
 - `docs/` the canonical documents.
 - `discovery/` Phase 0 working materials: targets, outreach, script, log, scorecard.
-- `demo/` the synthetic reference demo. Invented data, labeled as such everywhere. Never customer evidence.
+- `apps/web/` the Next.js demo: three screens, API routes, the RuleAssistant.
+- `packages/` rule-schema, loophole-engine, rule-tests, policy-generator.
+- `demo-data/procurement/` the synthetic incident, three files. Never customer evidence.
+- `generated/` one committed run of the deterministic pipeline; CI checks it is current.
+- Companion repo: `everrule-demo-procurement-service`, the code the generated patch applies to.
 
 ## Operating principle
 

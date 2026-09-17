@@ -1,0 +1,128 @@
+[
+  {
+    "id": "T-INC",
+    "category": "incident",
+    "name": "the recorded incident: $78,000 with no approval",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-LEG-1",
+    "category": "legitimate",
+    "name": "$12,000 with no approval",
+    "expect": "allow",
+    "passed": true
+  },
+  {
+    "id": "T-LEG-2",
+    "category": "legitimate",
+    "name": "$78,000 with a valid director approval",
+    "expect": "allow",
+    "passed": true
+  },
+  {
+    "id": "T-PRO",
+    "category": "prohibited",
+    "name": "$78,000 with no approval",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-BND-1",
+    "category": "boundary",
+    "name": "exactly $50,000 needs no approval",
+    "expect": "allow",
+    "passed": true
+  },
+  {
+    "id": "T-BND-2",
+    "category": "boundary",
+    "name": "$50,000 plus one cent needs approval",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-BND-3",
+    "category": "boundary",
+    "name": "a prior order older than 24h does not count",
+    "expect": "allow",
+    "passed": true
+  },
+  {
+    "id": "T-BND-4",
+    "category": "boundary",
+    "name": "$30,000 then $20,000 then $1 within 24h is denied",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-MIS",
+    "category": "missing_evidence",
+    "name": "absent amount is denied, not allowed",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-LH-1",
+    "category": "loophole",
+    "name": "Two $40,000 orders to the same vendor, 3 hours apart",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-LH-2",
+    "category": "loophole",
+    "name": "Approval names a different vendor",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-LH-3",
+    "category": "loophole",
+    "name": "Approver is a manager, not a director",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-LH-4",
+    "category": "loophole",
+    "name": "Requester approves their own request",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-LH-5",
+    "category": "loophole",
+    "name": "Approval expired before the request",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-LH-6",
+    "category": "loophole",
+    "name": "Approval issued after the purchase order",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-LH-7",
+    "category": "loophole",
+    "name": "Same approval reused for a second order",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-LH-8",
+    "category": "loophole",
+    "name": "Approval cap is below the commitment",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-LH-9",
+    "category": "loophole",
+    "name": "EUR 70,000 with no USD conversion record",
+    "expect": "deny",
+    "passed": true
+  }
+]

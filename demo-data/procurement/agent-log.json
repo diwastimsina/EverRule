@@ -1,0 +1,10 @@
+{
+  "_label": "SYNTHETIC. Invented for the EverRule demo. Not customer evidence.",
+  "agent": "procurement-agent",
+  "version": "2026.08.1",
+  "events": [
+    { "ts": "2026-08-17T14:01:48Z", "type": "tool_call", "tool": "lookupVendor", "input": { "vendor_id": "VEND-2291" }, "output": { "name": "Northgate Industrial Supply", "status": "active" } },
+    { "ts": "2026-08-17T14:02:11Z", "type": "tool_call", "tool": "createPurchaseOrder", "input": { "requester_id": "procurement-agent", "vendor_id": "VEND-2291", "amount": 78000, "currency": "USD", "requested_at": "2026-08-17T14:02:11Z" }, "output": { "po_id": "PO-88219", "status": "created" } },
+    { "ts": "2026-08-17T14:02:12Z", "type": "message", "text": "Purchase order PO-88219 created for Northgate Industrial Supply." }
+  ]
+}
