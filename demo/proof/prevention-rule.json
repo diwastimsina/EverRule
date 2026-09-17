@@ -1,0 +1,42 @@
+{
+  "_label": "SYNTHETIC reference demo. Not customer evidence.",
+  "rule_id": "ER-PROC-019",
+  "version": 2,
+  "status": "READY",
+  "effect": { "resource": "purchase_order", "action": "create" },
+  "trigger": [
+    "aggregate commitments to the same vendor within a rolling 24-hour window exceed 50,000 USD, including the requested order"
+  ],
+  "requirements": [
+    "an approval record is present",
+    "approver role is director",
+    "approver is not the requester",
+    "approval vendor matches the request vendor",
+    "approval currency matches the request currency",
+    "approval amount cap is at or above the aggregate commitment",
+    "approval was issued before the request",
+    "approval has not expired at the time of the request",
+    "approval has not been used for a prior order"
+  ],
+  "runtime": { "missing_required_evidence": "deny", "violation": "deny" },
+  "evidence_citations": [
+    { "claim": "PO-88219 for 78,000 USD was created without an approval record", "evidence": ["EV-01", "EV-02"], "status": "CONFIRMED" },
+    { "claim": "the order was cancelled two days later with a 2,100 USD fee", "evidence": ["EV-03"], "status": "CONFIRMED" }
+  ],
+  "assumptions": [
+    "50,000 USD is the customer's existing director-approval threshold (stated by the business owner, not present in evidence)",
+    "24 hours is the aggregation window the business owner chose; the evidence does not fix a window",
+    "non-USD orders are out of scope until a conversion record exists"
+  ],
+  "missing_evidence": [
+    "time records for remediation effort",
+    "the agent's prompt or policy text at version 2026.08.1",
+    "whether a delegated-approval path exists"
+  ],
+  "approval": {
+    "approver": "SYNTHETIC: J. Ellis, Director of Procurement Operations",
+    "approved_at": "2026-09-16T00:00:00Z",
+    "rationale": "Single-order threshold was the original policy. Split orders were not considered until the loophole check. Aggregating by vendor over 24 hours matches how the team already thinks about vendor exposure.",
+    "edited_fields": ["trigger: changed from single-order amount to rolling vendor aggregate"]
+  }
+}

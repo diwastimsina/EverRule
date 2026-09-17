@@ -1,0 +1,292 @@
+From 671864fcab88bdc4c13c977d6eb96c4e45cfe6a0 Mon Sep 17 00:00:00 2001
+From: diwastimsina <diwastimsina@gmail.com>
+Date: Wed, 16 Sep 2026 20:57:32 -0700
+Subject: [PATCH] demo: ER-PROC-019 guard in createPurchaseOrder with loophole
+ and boundary tests
+
+---
+ demo/src/purchase-orders.ts | 14 ++++++++
+ demo/src/rules.ts           | 67 +++++++++++++++++++++++++++++++++++++
+ demo/test/helpers.ts        | 31 +++++++++++++++++
+ demo/test/loopholes.test.ts | 53 +++++++++++++++++++++++++++++
+ demo/test/rule.test.ts      | 58 ++++++++++++++++++++++++++++++++
+ 5 files changed, 223 insertions(+)
+ create mode 100644 demo/src/rules.ts
+ create mode 100644 demo/test/helpers.ts
+ create mode 100644 demo/test/loopholes.test.ts
+ create mode 100644 demo/test/rule.test.ts
+
+diff --git a/demo/src/purchase-orders.ts b/demo/src/purchase-orders.ts
+index db03698..7b6b40a 100644
+--- a/demo/src/purchase-orders.ts
++++ b/demo/src/purchase-orders.ts
+@@ -1,12 +1,25 @@
+ // SYNTHETIC reference demo. A tiny procurement service that owns the effect.
++// The guard for ER-PROC-019 lives here, in the customer's own code path.
+ 
++import { ruleV2 } from "./rules.js";
+ import type { PurchaseOrder, PurchaseOrderRequest } from "./types.js";
+ 
++export class RuleViolation extends Error {
++  constructor(reason: string) {
++    super(reason);
++    this.name = "RuleViolation";
++  }
++}
++
+ export class PurchaseOrderService {
+   private orders: PurchaseOrder[] = [];
++  private usedApprovals = new Set<string>();
+   private seq = 88218;
+ 
+   createPurchaseOrder(req: PurchaseOrderRequest): PurchaseOrder {
++    const decision = ruleV2(req, this.orders, this.usedApprovals);
++    if (!decision.allowed) throw new RuleViolation(decision.reason);
++
+     this.seq += 1;
+     const po: PurchaseOrder = {
+       ...req,
+@@ -14,6 +27,7 @@ export class PurchaseOrderService {
+       created_at: req.requested_at,
+     };
+     this.orders.push(po);
++    if (req.approval) this.usedApprovals.add(req.approval.approval_id);
+     return po;
+   }
+ 
+diff --git a/demo/src/rules.ts b/demo/src/rules.ts
+new file mode 100644
+index 0000000..d66496a
+--- /dev/null
++++ b/demo/src/rules.ts
+@@ -0,0 +1,67 @@
++// SYNTHETIC reference demo.
++// Two versions of the prevention rule for INC-482.
++//   v1: the obvious rule. A single PO above $50,000 needs an approval.
++//   v2: the owner-approved rule after the loophole check (ER-PROC-019).
++// Rules are pure functions over the request plus the vendor's recent commitments.
++
++import type { Approval, Decision, PurchaseOrder, PurchaseOrderRequest } from "./types.js";
++
++export const THRESHOLD_USD = 50_000;
++export const WINDOW_MS = 24 * 60 * 60 * 1000;
++
++const ms = (iso: string) => new Date(iso).getTime();
++
++export function ruleV1(req: PurchaseOrderRequest): Decision {
++  if (req.amount > THRESHOLD_USD && !req.approval) {
++    return { allowed: false, reason: "ER-PROC-019 v1: PO above $50,000 requires approval" };
++  }
++  return { allowed: true, reason: "ER-PROC-019 v1: no approval required or approval present" };
++}
++
++/** Sum of prior commitments to the same vendor inside the rolling window. */
++export function priorCommitment(req: PurchaseOrderRequest, ledger: readonly PurchaseOrder[]): number {
++  const now = ms(req.requested_at);
++  return ledger
++    .filter((po) => po.vendor_id === req.vendor_id)
++    .filter((po) => now - ms(po.created_at) < WINDOW_MS && now - ms(po.created_at) >= 0)
++    .reduce((sum, po) => sum + po.amount, 0);
++}
++
++function approvalProblem(req: PurchaseOrderRequest, a: Approval, committed: number, used: ReadonlySet<string>): string | null {
++  if (used.has(a.approval_id)) return "approval was already used";
++  if (a.approver_role !== "director") return "approver is not a director";
++  if (a.approver_id === req.requester_id) return "requester approved their own request";
++  if (a.vendor_id !== req.vendor_id) return "approval is for a different vendor";
++  if (a.currency !== req.currency) return "approval currency does not match request";
++  if (a.amount_cap < committed) return "approval cap is below the aggregate commitment";
++  if (ms(a.issued_at) > ms(req.requested_at)) return "approval was issued after the request";
++  if (ms(a.expires_at) <= ms(req.requested_at)) return "approval has expired";
++  return null;
++}
++
++export function ruleV2(
++  req: PurchaseOrderRequest,
++  ledger: readonly PurchaseOrder[],
++  usedApprovals: ReadonlySet<string>,
++): Decision {
++  // Missing required evidence is a deny, not a pass.
++  if (req.currency !== "USD") {
++    return { allowed: false, reason: "ER-PROC-019: non-USD commitment needs a USD conversion record (missing evidence)" };
++  }
++  if (!Number.isFinite(req.amount) || req.amount <= 0) {
++    return { allowed: false, reason: "ER-PROC-019: amount is missing or invalid (missing evidence)" };
++  }
++
++  const committed = priorCommitment(req, ledger) + req.amount;
++  if (committed <= THRESHOLD_USD) {
++    return { allowed: true, reason: `ER-PROC-019: aggregate $${committed} within 24h is at or below $${THRESHOLD_USD}` };
++  }
++  if (!req.approval) {
++    return { allowed: false, reason: `ER-PROC-019: aggregate $${committed} to ${req.vendor_id} within 24h requires director approval` };
++  }
++  const problem = approvalProblem(req, req.approval, committed, usedApprovals);
++  if (problem) {
++    return { allowed: false, reason: `ER-PROC-019: ${problem}` };
++  }
++  return { allowed: true, reason: "ER-PROC-019: valid director approval scoped to vendor and commitment" };
++}
+diff --git a/demo/test/helpers.ts b/demo/test/helpers.ts
+new file mode 100644
+index 0000000..9ce08c1
+--- /dev/null
++++ b/demo/test/helpers.ts
+@@ -0,0 +1,31 @@
++// SYNTHETIC reference demo. Builders for test requests.
++import type { Approval, PurchaseOrderRequest } from "../src/types.js";
++
++export const T0 = "2026-08-17T14:00:00Z";
++const plus = (iso: string, hours: number) => new Date(new Date(iso).getTime() + hours * 3_600_000).toISOString();
++export const at = (hours: number) => plus(T0, hours);
++
++export function approval(over: Partial<Approval> = {}): Approval {
++  return {
++    approval_id: "APR-1001",
++    approver_id: "dir-ellis",
++    approver_role: "director",
++    vendor_id: "VEND-2291",
++    amount_cap: 80_000,
++    currency: "USD",
++    issued_at: at(-2),
++    expires_at: at(+72),
++    ...over,
++  };
++}
++
++export function request(over: Partial<PurchaseOrderRequest> = {}): PurchaseOrderRequest {
++  return {
++    requester_id: "procurement-agent",
++    vendor_id: "VEND-2291",
++    amount: 78_000,
++    currency: "USD",
++    requested_at: T0,
++    ...over,
++  };
++}
+diff --git a/demo/test/loopholes.test.ts b/demo/test/loopholes.test.ts
+new file mode 100644
+index 0000000..dcf9053
+--- /dev/null
++++ b/demo/test/loopholes.test.ts
+@@ -0,0 +1,53 @@
++// SYNTHETIC reference demo.
++// Each case satisfies the literal v1 rule while violating the business intent.
++// v1 must ALLOW it (the loophole is real). v2 must DENY it (the loophole is closed).
++
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { ruleV1, ruleV2 } from "../src/rules.js";
++import type { PurchaseOrder, PurchaseOrderRequest } from "../src/types.js";
++import { approval, at, request } from "./helpers.js";
++
++interface Loophole {
++  category: string;
++  name: string;
++  req: PurchaseOrderRequest;
++  ledger?: PurchaseOrder[];
++  used?: string[];
++}
++
++const priorPo = (amount: number, hoursAgo: number): PurchaseOrder => ({
++  ...request({ amount, requested_at: at(-hoursAgo) }),
++  po_id: "PO-PRIOR",
++  created_at: at(-hoursAgo),
++});
++
++export const LOOPHOLES: Loophole[] = [
++  { category: "split / aggregate", name: "two $40,000 orders to the same vendor 3 hours apart",
++    req: request({ amount: 40_000 }), ledger: [priorPo(40_000, 3)] },
++  { category: "wrong scope", name: "approval is for a different vendor",
++    req: request({ approval: approval({ vendor_id: "VEND-0007" }) }) },
++  { category: "wrong identity", name: "approver is a manager, not a director",
++    req: request({ approval: approval({ approver_role: "manager" }) }) },
++  { category: "wrong identity", name: "requester approves their own request",
++    req: request({ approval: approval({ approver_id: "procurement-agent" }) }) },
++  { category: "stale evidence", name: "approval expired before the request",
++    req: request({ approval: approval({ expires_at: at(-1) }) }) },
++  { category: "timing reversal", name: "approval issued after the purchase order",
++    req: request({ approval: approval({ issued_at: at(+1) }) }) },
++  { category: "replay / reuse", name: "same approval used for a second order",
++    req: request({ approval: approval() }), used: ["APR-1001"] },
++  { category: "boundary", name: "approval cap below the commitment",
++    req: request({ approval: approval({ amount_cap: 60_000 }) }) },
++  { category: "alternate currency", name: "EUR 70,000 with no USD conversion record",
++    req: request({ amount: 70_000, currency: "EUR", approval: approval({ currency: "EUR" }) }) },
++];
++
++for (const lh of LOOPHOLES) {
++  test(`[${lh.category}] ${lh.name}: v1 allows, v2 denies`, () => {
++    const v1 = ruleV1(lh.req);
++    const v2 = ruleV2(lh.req, lh.ledger ?? [], new Set(lh.used ?? []));
++    assert.equal(v1.allowed, true, `v1 should be fooled: ${v1.reason}`);
++    assert.equal(v2.allowed, false, `v2 should deny: ${v2.reason}`);
++  });
++}
+diff --git a/demo/test/rule.test.ts b/demo/test/rule.test.ts
+new file mode 100644
+index 0000000..c13c0b7
+--- /dev/null
++++ b/demo/test/rule.test.ts
+@@ -0,0 +1,58 @@
++// SYNTHETIC reference demo. Deterministic tests for ER-PROC-019 v2.
++// Categories required by the PRD: legitimate, prohibited, boundary, missing evidence.
++
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { PurchaseOrderService, RuleViolation } from "../src/purchase-orders.js";
++import { ruleV2, THRESHOLD_USD } from "../src/rules.js";
++import { approval, at, request } from "./helpers.js";
++
++test("legitimate: $12,000 to a vendor with no approval is allowed", () => {
++  assert.equal(ruleV2(request({ amount: 12_000 }), [], new Set()).allowed, true);
++});
++
++test("legitimate: $78,000 with a valid director approval is allowed", () => {
++  assert.equal(ruleV2(request({ approval: approval() }), [], new Set()).allowed, true);
++});
++
++test("prohibited: $78,000 with no approval is denied", () => {
++  const d = ruleV2(request(), [], new Set());
++  assert.equal(d.allowed, false);
++  assert.match(d.reason, /director approval/);
++});
++
++test("boundary: exactly $50,000 needs no approval", () => {
++  assert.equal(ruleV2(request({ amount: THRESHOLD_USD }), [], new Set()).allowed, true);
++});
++
++test("boundary: $50,000.01 needs approval", () => {
++  assert.equal(ruleV2(request({ amount: THRESHOLD_USD + 0.01 }), [], new Set()).allowed, false);
++});
++
++test("boundary: $30,000 then $20,000 within 24h is allowed, then $1 more is denied", () => {
++  const s = new PurchaseOrderService();
++  s.createPurchaseOrder(request({ amount: 30_000, requested_at: at(0) }));
++  s.createPurchaseOrder(request({ amount: 20_000, requested_at: at(1) }));
++  assert.throws(() => s.createPurchaseOrder(request({ amount: 1, requested_at: at(2) })), RuleViolation);
++});
++
++test("boundary: a prior order older than 24h does not count", () => {
++  const s = new PurchaseOrderService();
++  s.createPurchaseOrder(request({ amount: 40_000, requested_at: at(-25) }));
++  assert.doesNotThrow(() => s.createPurchaseOrder(request({ amount: 40_000, requested_at: at(0) })));
++});
++
++test("missing evidence: absent amount is denied, not allowed", () => {
++  const d = ruleV2(request({ amount: Number.NaN }), [], new Set());
++  assert.equal(d.allowed, false);
++  assert.match(d.reason, /missing evidence/);
++});
++
++test("service: an approval is consumed after one use", () => {
++  const s = new PurchaseOrderService();
++  s.createPurchaseOrder(request({ approval: approval() }));
++  assert.throws(
++    () => s.createPurchaseOrder(request({ requested_at: at(1), approval: approval() })),
++    /already used/,
++  );
++});
+-- 
+2.53.0
+

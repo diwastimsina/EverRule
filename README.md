@@ -21,6 +21,12 @@ Canonical hierarchy when documents differ, highest first:
 
 `docs/EverRule_Canonical_Documentation_v2.1.md` is the combined package with the scope rule, numeric stop rule and changelog.
 
+## Folders
+
+- `docs/` the canonical documents.
+- `discovery/` Phase 0 working materials: targets, outreach, script, log, scorecard.
+- `demo/` the synthetic reference demo. Invented data, labeled as such everywhere. Never customer evidence.
+
 ## Operating principle
 
 Rules decide. Cryptography proves integrity. Replay measures behavior. LLMs propose. Humans authorize. Customer-controlled infrastructure enforces.
