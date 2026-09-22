@@ -6,6 +6,21 @@ import type { ProtectionArtifact } from "@everrule/rule-schema";
 
 export interface GitHubTarget { token: string; owner: string; repo: string; base: string }
 
+const SAFE_PATH = /^src\/[A-Za-z0-9_-]+(\.test)?\.ts$/;
+const MAX_FILES = 8;
+const MAX_FILE_BYTES = 200_000;
+
+/** Only paths the generator can produce. Throws on anything else. */
+export function assertSafeFiles(files: { path: string; content: string }[]): void {
+  if (files.length === 0 || files.length > MAX_FILES) throw new Error(`expected 1 to ${MAX_FILES} files`);
+  for (const f of files) {
+    if (!SAFE_PATH.test(f.path)) throw new Error(`refusing to write outside src/: ${f.path}`);
+    if (Buffer.byteLength(f.content, "utf8") > MAX_FILE_BYTES) throw new Error(`file too large: ${f.path}`);
+  }
+}
+
+const encodePath = (p: string) => p.split("/").map(encodeURIComponent).join("/");
+
 export interface PrPlan { branch: string; commit_message: string; files: { path: string; content: string }[]; title: string; body: string }
 
 export function targetFromEnv(env: Record<string, string | undefined> = process.env): GitHubTarget | null {
@@ -42,17 +57,19 @@ async function gh<T>(t: GitHubTarget, method: string, path: string, body?: unkno
 }
 
 export async function createPullRequest(t: GitHubTarget, plan: PrPlan): Promise<{ url: string; number: number; branch: string }> {
-  const repo = `/repos/${t.owner}/${t.repo}`;
-  const ref = await gh<{ object: { sha: string } }>(t, "GET", `${repo}/git/ref/heads/${t.base}`);
+  assertSafeFiles(plan.files);
+  if (!/^[A-Za-z0-9_.-]+$/.test(t.owner) || !/^[A-Za-z0-9_.-]+$/.test(t.repo) || !/^[A-Za-z0-9_./-]+$/.test(t.base)) throw new Error("invalid GitHub target");
+  const repo = `/repos/${encodeURIComponent(t.owner)}/${encodeURIComponent(t.repo)}`;
+  const ref = await gh<{ object: { sha: string } }>(t, "GET", `${repo}/git/ref/heads/${encodePath(t.base)}`);
   await gh(t, "POST", `${repo}/git/refs`, { ref: `refs/heads/${plan.branch}`, sha: ref.object.sha });
 
   for (const f of plan.files) {
     let sha: string | undefined;
     try {
-      const existing = await gh<{ sha: string }>(t, "GET", `${repo}/contents/${f.path}?ref=${encodeURIComponent(plan.branch)}`);
+      const existing = await gh<{ sha: string }>(t, "GET", `${repo}/contents/${encodePath(f.path)}?ref=${encodeURIComponent(plan.branch)}`);
       sha = existing.sha;
     } catch { /* new file */ }
-    await gh(t, "PUT", `${repo}/contents/${f.path}`, {
+    await gh(t, "PUT", `${repo}/contents/${encodePath(f.path)}`, {
       message: plan.commit_message.split("\n")[0] + `: ${f.path}`,
       content: Buffer.from(f.content, "utf8").toString("base64"),
       branch: plan.branch,

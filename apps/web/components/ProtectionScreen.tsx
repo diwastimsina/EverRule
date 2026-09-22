@@ -22,7 +22,7 @@ export function ProtectionScreen({ run, onRestart }: Props) {
   async function createPr() {
     setPrBusy(true); setPrError(null);
     try {
-      const r = await fetch("/api/pr", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ artifact: a }) });
+      const r = await fetch("/api/pr", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ rule: a.rule, approval: a.approval, checks: run.checks, incident_id: analysis.incident_id, exposure: analysis.amount }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error ?? `HTTP ${r.status}`);
       setPr(j);
