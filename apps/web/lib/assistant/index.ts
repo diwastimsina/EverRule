@@ -5,7 +5,7 @@ import type { RuleAssistant } from "./types";
 export type { RuleAssistant };
 
 export function pickAssistant(useSample: boolean): RuleAssistant {
-  if (!useSample && process.env.ANTHROPIC_API_KEY) return new ModelAssistant();
+  if (!useSample && process.env.ANTHROPIC_API_KEY && process.env.DEMO_MODE !== "true") return new ModelAssistant();
   return new FixtureAssistant();
 }
 

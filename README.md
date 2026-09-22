@@ -15,7 +15,7 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:3100 and click **Analyze incident**. Details in `docs/demo.md`; how it fits together in `docs/architecture.md`.
+Open http://localhost:3100 and click **Analyze incident**. No keys needed for demo mode. To open real PRs on the companion repo, copy `apps/web/.env.example` to `apps/web/.env.local` and fill in the GitHub variables; see `docs/demo.md`. Details in `docs/demo.md`; how it fits together in `docs/architecture.md`.
 
 ```
 pnpm typecheck && pnpm test && pnpm build && pnpm generate:check
