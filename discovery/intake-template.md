@@ -6,10 +6,12 @@ One copy per incident. Fill from customer evidence only. Anything not in the evi
 |---|---|
 | Incident ID | INC- |
 | Title | |
+| Segment | operations / developer |
 | Workflow | |
 | Date of incident | |
 | Agent (vendor or in-house, version) | |
-| Action taken | |
+| Business effect (what changed, from the system of record) | |
+| Execution path (agent, tool, script, browser, trace id) | |
 | Amount and currency | |
 | Policy that should have applied | |
 | Approval evidence present | yes / no / partial |

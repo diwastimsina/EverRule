@@ -14,3 +14,8 @@ next-env.d.ts
 docs/
 
 .artifact-check/
+
+# Discovery working sheets hold real names and quotes.
+discovery/targets.csv
+discovery/discovery-log.csv
+discovery/scorecard.csv
