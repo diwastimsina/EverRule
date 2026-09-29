@@ -6,7 +6,7 @@ import type { ProtectionArtifact } from "@everrule/rule-schema";
 
 export interface GitHubTarget { token: string; owner: string; repo: string; base: string }
 
-const SAFE_PATH = /^src\/[A-Za-z0-9_-]+(\.test)?\.ts$/;
+const SAFE_PATH = /^(src\/[A-Za-z0-9_-]+(\.test)?\.ts|everrule\/ER-[A-Z]+-\d{3}\.json)$/;
 const MAX_FILES = 8;
 const MAX_FILE_BYTES = 200_000;
 
@@ -14,7 +14,7 @@ const MAX_FILE_BYTES = 200_000;
 export function assertSafeFiles(files: { path: string; content: string }[]): void {
   if (files.length === 0 || files.length > MAX_FILES) throw new Error(`expected 1 to ${MAX_FILES} files`);
   for (const f of files) {
-    if (!SAFE_PATH.test(f.path)) throw new Error(`refusing to write outside src/: ${f.path}`);
+    if (!SAFE_PATH.test(f.path)) throw new Error(`refusing to write outside src/ and everrule/: ${f.path}`);
     if (Buffer.byteLength(f.content, "utf8") > MAX_FILE_BYTES) throw new Error(`file too large: ${f.path}`);
   }
 }
@@ -24,8 +24,10 @@ const encodePath = (p: string) => p.split("/").map(encodeURIComponent).join("/")
 export interface PrPlan { branch: string; commit_message: string; files: { path: string; content: string }[]; title: string; body: string }
 
 export function targetFromEnv(env: Record<string, string | undefined> = process.env): GitHubTarget | null {
-  if (env.DEMO_MODE === "true") return null;
-  const token = env.GITHUB_TOKEN, owner = env.GITHUB_TARGET_OWNER || env.GITHUB_OWNER, repo = env.GITHUB_TARGET_REPO;
+  const token = env.GITHUB_TOKEN;
+  const [repoOwner, repoName] = (env.GITHUB_REPO ?? "").split("/");
+  const owner = env.GITHUB_TARGET_OWNER || env.GITHUB_OWNER || repoOwner;
+  const repo = env.GITHUB_TARGET_REPO || repoName;
   if (!token || !owner || !repo) return null;
   return { token, owner, repo, base: env.GITHUB_TARGET_BASE || env.GITHUB_BASE_BRANCH || "main" };
 }

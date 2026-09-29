@@ -10,7 +10,9 @@
     "build": "pnpm --filter @everrule/web build",
     "dev": "pnpm --filter @everrule/web dev",
     "generate": "node --import tsx scripts/generate.ts",
-    "generate:check": "node --import tsx scripts/generate.ts --check"
+    "generate:check": "node --import tsx scripts/generate.ts --check",
+    "verify:artifact": "node --import tsx scripts/verify-artifact.ts",
+    "check": "pnpm typecheck && pnpm test && pnpm generate:check && pnpm verify:artifact && pnpm build"
   },
   "devDependencies": {
     "@types/node": "^24",

@@ -1,101 +1,68 @@
-// The fixed loophole taxonomy, instantiated against a rule's threshold and vendor.
-// Each case is a concrete scenario. Whether it is a real loophole is decided by
-// evaluating it, never by asserting it.
-import type { ApprovalEvidence, CandidateRule, Loophole, LoopholeCheck, Scenario } from "@everrule/rule-schema";
+// Thirteen fixed cases for threshold-plus-approval rules, instantiated from the
+// rule's own threshold. Each carries the owner's intent. The evaluator decides
+// what the literal rule does; classification compares that with the intent.
+import type { ApprovalEvidence, CandidateRule, Classification, Decision, Intent, Loophole, LoopholeCheck, Scenario } from "@everrule/rule-schema";
 import { evaluate } from "./evaluate";
 
 const VENDOR = "VEND-2291";
 const REQUESTER = "procurement-agent";
+const ORDER = "PO-CASE-1";
+const SECOND = 1 / 3600;
 
-function validApproval(over: Partial<ApprovalEvidence> = {}): ApprovalEvidence {
+function approval(amount: number, over: Partial<ApprovalEvidence> = {}): ApprovalEvidence {
   return {
-    approval_id: "APR-1001",
-    approver_id: "dir-ellis",
-    approver_role: "director",
-    vendor_id: VENDOR,
-    amount_cap: 80_000,
-    currency: "USD",
-    issued_hours_before_request: 2,
-    expires_hours_after_request: 72,
-    ...over,
+    approval_id: "APR-1001", approver_id: "dir-ellis", approver_role: "director", vendor_id: VENDOR,
+    amount_cap: Math.max(amount, 100_000), currency: "USD", valid: true, references_commitment: ORDER,
+    issued_hours_before_request: 2, expires_hours_after_request: 72, ...over,
   };
 }
 
-function scenario(over: Partial<Scenario["request"]> = {}, prior: Scenario["prior_orders"] = [], used: string[] = []): Scenario {
+function scenario(amount: number | null, a: ApprovalEvidence | null, extra: Partial<Scenario> = {}, currency: "USD" | "EUR" = "USD"): Scenario {
   return {
-    prior_orders: prior,
-    request: { requester_id: REQUESTER, vendor_id: VENDOR, amount: 78_000, currency: "USD", approval: null, ...over },
-    used_approval_ids: used,
+    prior_orders: [],
+    used_approval_ids: [],
+    ...extra,
+    request: { commitment_id: ORDER, requester_id: REQUESTER, vendor_id: VENDOR, amount, currency, approval: a },
   };
 }
+
+const money = (n: number) => `$${n.toLocaleString()}`;
 
 export function standardLoopholes(rule: CandidateRule): Loophole[] {
   const t = rule.params.threshold;
-  const split = Math.round((t * 0.8) / 1000) * 1000; // two orders each under the threshold
-  const over = t + 28_000;
+  const over = t + 1;
+  const half = Math.round((t * 0.8) / 1000) * 1000;
+  const L = (id: number, category: Loophole["category"], title: string, explanation: string, intent: Intent, recommendation: string, s: Scenario): Loophole =>
+    ({ id: `LH-${String(id).padStart(2, "0")}`, category, title, explanation, intent, recommendation, scenario: s });
   return [
-    {
-      id: "LH-1", category: "split_aggregate",
-      title: `Two $${split.toLocaleString()} orders to the same vendor, 3 hours apart`,
-      explanation: `Each order is under $${t.toLocaleString()}, so a single-order rule never fires. Together they commit $${(2 * split).toLocaleString()} to one vendor.`,
-      scenario: scenario({ amount: split }, [{ vendor_id: VENDOR, amount: split, hours_before: 3 }]),
-    },
-    {
-      id: "LH-2", category: "wrong_scope",
-      title: "Approval names a different vendor",
-      explanation: "An approval exists, but for VEND-0007. A rule that only checks for the presence of an approval accepts it.",
-      scenario: scenario({ amount: over, approval: validApproval({ vendor_id: "VEND-0007" }) }),
-    },
-    {
-      id: "LH-3", category: "wrong_identity",
-      title: "Approver is a manager, not a director",
-      explanation: "The approval is real but from the wrong role.",
-      scenario: scenario({ amount: over, approval: validApproval({ approver_role: "manager" }) }),
-    },
-    {
-      id: "LH-4", category: "wrong_identity",
-      title: "Requester approves their own request",
-      explanation: "The agent's own identity appears as the approver.",
-      scenario: scenario({ amount: over, approval: validApproval({ approver_id: REQUESTER }) }),
-    },
-    {
-      id: "LH-5", category: "stale_evidence",
-      title: "Approval expired before the request",
-      explanation: "A director approval from last quarter is presented for this order.",
-      scenario: scenario({ amount: over, approval: validApproval({ expires_hours_after_request: -1 }) }),
-    },
-    {
-      id: "LH-6", category: "timing_reversal",
-      title: "Approval issued after the purchase order",
-      explanation: "The approval is attached retroactively, one hour after the order was placed.",
-      scenario: scenario({ amount: over, approval: validApproval({ issued_hours_before_request: -1 }) }),
-    },
-    {
-      id: "LH-7", category: "replay_reuse",
-      title: "Same approval reused for a second order",
-      explanation: "One valid approval is attached to two orders.",
-      scenario: scenario({ amount: over, approval: validApproval() }, [], ["APR-1001"]),
-    },
-    {
-      id: "LH-8", category: "boundary",
-      title: "Approval cap is below the commitment",
-      explanation: `A director approved up to $60,000. The order is $${over.toLocaleString()}.`,
-      scenario: scenario({ amount: over, approval: validApproval({ amount_cap: 60_000 }) }),
-    },
-    {
-      id: "LH-9", category: "alternate_currency",
-      title: "EUR 70,000 with no USD conversion record",
-      explanation: "A dollar threshold compared against a euro amount without conversion.",
-      scenario: scenario({ amount: 70_000, currency: "EUR", approval: validApproval({ currency: "EUR" }) }),
-    },
+    L(1, "boundary", `Just under the threshold: ${money(t - 1)}, no approval`, "Below the line the rule should not apply.", "allow", "None.", scenario(t - 1, null)),
+    L(2, "boundary", `Exactly at the threshold: ${money(t)}, no approval`, `The rule says "above". An order of exactly ${money(t)} passes without approval. Is that what you meant?`, "owner_decides", `Keep "above", or change to "at or above" ${money(t)}.`, scenario(t, null)),
+    L(3, "boundary", `Just over the threshold: ${money(over)}, no approval`, "The first dollar over the line must need approval.", "deny", "None.", scenario(over, null)),
+    L(4, "split_aggregate", `Two ${money(half)} orders to the same vendor, 3 hours apart`, `Each order is under ${money(t)}, so a single-order rule never fires. Together they commit ${money(2 * half)} to one vendor.`, "deny", "Count the vendor's commitments in a rolling 24-hour window, not one order at a time.", scenario(half, null, { prior_orders: [{ vendor_id: VENDOR, amount: half, hours_before: 3 }] })),
+    L(5, "stale_evidence", "Approval expired one second before the order", "A real director approval, but it lapsed just before execution.", "deny", "Check expiry at execution time.", scenario(over, approval(over, { expires_hours_after_request: -SECOND }))),
+    L(6, "timing_reversal", "Approval issued after the order", "The approval is attached one hour after the order was placed.", "deny", "Require the approval to exist before execution.", scenario(over, approval(over, { issued_hours_before_request: -1 }))),
+    L(7, "wrong_identity", "Approver is a manager, not a director", "The approval is real but from the wrong role.", "deny", "Check the approver's role.", scenario(over, approval(over, { approver_role: "manager" }))),
+    L(8, "wrong_identity", "Requester approves their own order", "The agent's own identity appears as the approver.", "deny", "Reject approvals where approver and requester match.", scenario(over, approval(over, { approver_id: REQUESTER }))),
+    L(9, "wrong_scope", "Approval is for a different order", "A valid director approval exists, but it names PO-CASE-9.", "deny", "Require the approval to reference this order.", scenario(over, approval(over, { references_commitment: "PO-CASE-9" }))),
+    L(10, "replay_reuse", "Same approval reused for a second order", "One valid approval is attached to two orders.", "deny", "Make approvals single-use.", scenario(over, approval(over), { used_approval_ids: ["APR-1001"] })),
+    L(11, "invalid_evidence", "Approval record marked invalid", "The approval system flags the record as revoked or malformed.", "deny", "Require a valid approval record.", scenario(over, approval(over, { valid: false }))),
+    L(12, "alternate_currency", `EUR ${over.toLocaleString()} with no USD conversion record`, "A dollar threshold compared against a euro amount without conversion.", "deny", "Refuse commitments the rule cannot evaluate.", scenario(over, approval(over, { currency: "EUR" }), {}, "EUR")),
+    L(13, "boundary", `Ten times the threshold: ${money(10 * t)}, no approval`, "A large order with no approval must be refused.", "deny", "None.", scenario(10 * t, null)),
   ];
 }
 
-/** A loophole is real when the initial rule allows it, and closed when the improved rule denies it. */
+export function classify(intent: Intent, d: Decision): Classification {
+  if (intent === "owner_decides") return "owner_decides";
+  return (intent === "allow") === d.allowed ? "holds" : "loophole";
+}
+
+/** Real: the initial rule gets it wrong. Closed: the improved rule does not. */
 export function checkLoopholes(initial: CandidateRule, improved: CandidateRule, loopholes: Loophole[]): LoopholeCheck[] {
   return loopholes.map((loophole) => {
     const i = evaluate(initial.params, loophole.scenario);
     const m = evaluate(improved.params, loophole.scenario);
-    return { loophole, initial: i, improved: m, real: i.allowed, closed: !m.allowed };
+    const initial_class = classify(loophole.intent, i);
+    const improved_class = classify(loophole.intent, m);
+    return { loophole, initial: i, improved: m, initial_class, improved_class, real: initial_class === "loophole", closed: improved_class !== "loophole" };
   });
 }

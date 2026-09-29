@@ -1,46 +1,57 @@
 {
-  "rule_id": "ER-PROC-019",
-  "version": 2,
-  "plain_english": "Aggregate commitments to the same vendor above $50,000 within 24 hours require a valid director approval scoped to that vendor and commitment. Missing evidence means refuse.",
-  "effect": {
-    "resource": "purchase_order",
-    "action": "create"
-  },
-  "params": {
-    "threshold": 50000,
-    "currency": "USD",
-    "aggregate": {
-      "by": "vendor",
-      "window_hours": 24
+  "rule": {
+    "rule_id": "ER-PROC-019",
+    "version": 2,
+    "plain_english": "Commitments to the same vendor totaling above $50,000 within 24 hours require a valid director approval for that order, issued before it and used once. Missing evidence means refuse.",
+    "effect": {
+      "resource": "purchase_order",
+      "action": "create"
     },
-    "approval": {
-      "role": "director",
-      "check_role": true,
-      "scoped_to_vendor": true,
-      "must_precede_request": true,
-      "must_not_be_expired": true,
-      "single_use": true,
-      "no_self_approval": true,
-      "cap_covers_commitment": true,
-      "currency_must_match": true
-    }
+    "params": {
+      "threshold": 50000,
+      "operator": "gt",
+      "currency": "USD",
+      "aggregate": {
+        "by": "vendor",
+        "window_hours": 24
+      },
+      "approval": {
+        "role": "director",
+        "check_role": true,
+        "must_be_valid": true,
+        "scoped_to_vendor": true,
+        "must_reference_commitment": true,
+        "must_precede_request": true,
+        "must_not_be_expired": true,
+        "single_use": true,
+        "no_self_approval": true,
+        "cap_covers_commitment": true,
+        "currency_must_match": true
+      }
+    },
+    "evidence_citations": [
+      "agent-log.json",
+      "procurement-audit.csv"
+    ],
+    "assumptions": [
+      "$50,000 is the existing director-approval threshold",
+      "24 hours is the aggregation window chosen by the business owner"
+    ],
+    "missing_evidence": [
+      "the agent's prompt or policy text at the time of the incident"
+    ]
   },
-  "evidence_citations": [
-    "EV-01",
-    "EV-02"
-  ],
-  "assumptions": [
-    "$50,000 is the existing director-approval threshold",
-    "24 hours is the aggregation window chosen by the business owner"
-  ],
-  "missing_evidence": [
-    "the agent's prompt or policy text at the time of the incident"
-  ],
+  "rule_hash": "00640f604ecd29598861f0c3374600a0946c1b6a2a60f5dc52b4be828132d0b3",
+  "canonical_rule": "{\"assumptions\":[\"$50,000 is the existing director-approval threshold\",\"24 hours is the aggregation window chosen by the business owner\"],\"effect\":{\"action\":\"create\",\"resource\":\"purchase_order\"},\"evidence_citations\":[\"agent-log.json\",\"procurement-audit.csv\"],\"missing_evidence\":[\"the agent's prompt or policy text at the time of the incident\"],\"params\":{\"aggregate\":{\"by\":\"vendor\",\"window_hours\":24},\"approval\":{\"cap_covers_commitment\":true,\"check_role\":true,\"currency_must_match\":true,\"must_be_valid\":true,\"must_not_be_expired\":true,\"must_precede_request\":true,\"must_reference_commitment\":true,\"no_self_approval\":true,\"role\":\"director\",\"scoped_to_vendor\":true,\"single_use\":true},\"currency\":\"USD\",\"operator\":\"gt\",\"threshold\":50000},\"plain_english\":\"Commitments to the same vendor totaling above $50,000 within 24 hours require a valid director approval for that order, issued before it and used once. Missing evidence means refuse.\",\"rule_id\":\"ER-PROC-019\",\"version\":2}",
   "approval": {
     "approver_name": "J. Ellis",
     "approver_role": "Director of Procurement Operations",
     "approved_at": "2026-09-16T00:00:00Z",
     "rationale": "Split orders were not considered until the loophole check. Aggregating by vendor over 24 hours matches how the team already thinks about vendor exposure.",
-    "edited": false
-  }
+    "edited": false,
+    "decision": "approved",
+    "rule_hash": "00640f604ecd29598861f0c3374600a0946c1b6a2a60f5dc52b4be828132d0b3"
+  },
+  "status": "exported, deployment unconfirmed",
+  "synthetic": true
 }
