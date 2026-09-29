@@ -6,7 +6,7 @@ When an AI agent takes a costly action it should not have, EverRule turns that i
 
 ## Status
 
-Phase 0.5: working demo. One synthetic incident, upload to PR artifact, deployed from this repo. Definition of done and scope: `docs/everrule-solo-build-plan.md` section 4. After that, Phase 1 discovery.
+Phase 0.5: working demo. One synthetic incident, upload to PR artifact, deployed from this repo. After that, Phase 1 discovery.
 
 ## Run the demo
 
@@ -15,7 +15,7 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:3100 and click **Analyze incident**. No keys needed for demo mode. To open real PRs on the companion repo, copy `apps/web/.env.example` to `apps/web/.env.local` and fill in the GitHub variables; see `docs/demo.md`. Details in `docs/demo.md`; how it fits together in `docs/architecture.md`.
+Open http://localhost:3100 and click **Analyze incident**. No keys needed for demo mode. To open real PRs on the companion repo, copy `apps/web/.env.example` to `apps/web/.env.local` and fill in `GITHUB_TOKEN`, `GITHUB_TARGET_OWNER` and `GITHUB_TARGET_REPO`. Use a fine-grained token scoped only to the companion repo, with Contents and Pull requests read and write.
 
 ```
 pnpm typecheck && pnpm test && pnpm build && pnpm generate:check
@@ -23,20 +23,11 @@ pnpm typecheck && pnpm test && pnpm build && pnpm generate:check
 
 ## Documents
 
-Canonical hierarchy when documents differ, highest first:
-
-1. `docs/everrule-simple.md` - company, product, customer experience
-2. `docs/everrule-solo-build-plan.md` - what gets built and when
-3. `docs/everrule-prd.md` - what users need, V0/V1 requirements
-4. `docs/everrule-tdd.md` - how the approved product is implemented
-5. `docs/everrule-build-guide.md` - engineering sequence and stack
-6. `docs/everrule-one-pager.md` - external company story
-
-`docs/EverRule_Canonical_Documentation_v2.1.md` is the combined package with the scope rule, numeric stop rule and changelog.
+Planning documents live in `docs/` on the founder's machine and are not published in this repository.
 
 ## Folders
 
-- `docs/` the canonical documents.
+- `docs/` planning documents, local only and ignored by git.
 - `discovery/` Phase 0 working materials: targets, outreach, script, log, scorecard.
 - `apps/web/` the Next.js demo: three screens, API routes, the RuleAssistant.
 - `packages/` rule-schema, loophole-engine, rule-tests, policy-generator.

@@ -9,3 +9,6 @@ dist/
 .codex/
 *.tsbuildinfo
 next-env.d.ts
+
+# Planning documents stay local, never on GitHub.
+docs/
