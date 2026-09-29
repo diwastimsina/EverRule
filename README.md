@@ -63,3 +63,14 @@ All optional locally. Copy `apps/web/.env.example` to `apps/web/.env.local`.
 ## Operating principle
 
 Rules decide. Evidence establishes. LLMs propose. Humans authorize. The customer's own code enforces.
+
+## Rule memory (Sprint 01)
+
+| Variable | Effect |
+|---|---|
+| nothing set | Stateless demo: the browser holds the run (MVP 0.1 behavior). |
+| `EVERRULE_DB=pglite` | Embedded Postgres on disk under `.data/`. Rule memory on, locally. |
+| `EVERRULE_DB=memory` | In-memory Postgres for tests. |
+| `DATABASE_URL=postgres://...` | Managed Postgres (Neon, Supabase, RDS). Migrations in `packages/persistence/drizzle` run on first connect. |
+
+`packages/persistence` stores the chain (incident, evidence hashes, facts, rule versions content-addressed by hash, loophole runs, approvals bound to the approved version, test suites, artifacts with export and merge status, model calls, audit log) through one org-scoped `Repo` with no deletes. `packages/evidence-gate` refuses uploads containing emails, phone numbers, Luhn-valid card numbers, keys or tokens, naming the pattern and file, never the value. Neither package is wired into the app yet; with nothing set, the demo behaves exactly as in MVP 0.1.
