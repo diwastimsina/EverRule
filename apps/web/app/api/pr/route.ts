@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ApprovalRecord, CandidateRule, LoopholeCheck } from "@everrule/rule-schema";
+import { ruleHash } from "@everrule/loophole-engine";
 import { buildMatrix, runMatrix } from "@everrule/rule-tests";
 import { generateProtection } from "@everrule/policy-generator";
 import { createPullRequest, prPlan, targetFromEnv } from "@/lib/github";
 import { allow } from "@/lib/rate-limit";
+import { requireSession } from "@/lib/session";
 
-export function GET() {
+export function GET(req: Request) {
+  const denied = requireSession(req);
+  if (denied) return denied;
   const t = targetFromEnv();
   return NextResponse.json(t ? { configured: true, target: `${t.owner}/${t.repo}`, base: t.base } : { configured: false });
 }
@@ -25,6 +29,8 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  const denied = requireSession(req);
+  if (denied) return denied;
   const t = targetFromEnv();
   if (!t) return NextResponse.json({ error: "GitHub PR creation is not configured on this deployment. Download the patch instead." }, { status: 501 });
 
@@ -38,8 +44,8 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const { rule, approval, checks, incident_id, exposure } = parsed.data;
-  const accepted = checks.filter((c) => c.real && c.closed);
-  const results = runMatrix(rule, buildMatrix(rule, exposure, accepted));
+  if (approval.rule_hash !== ruleHash(rule)) return NextResponse.json({ error: "The rule changed after it was approved. Approve the current rule first." }, { status: 409 });
+  const results = runMatrix(rule, buildMatrix(rule, exposure));
   const artifact = generateProtection(rule, approval, checks, results, incident_id, exposure);
   try {
     const result = await createPullRequest(t, prPlan(artifact));

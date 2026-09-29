@@ -1,127 +1,113 @@
 [
   {
-    "id": "T-INC",
+    "id": "T-01",
+    "category": "boundary",
+    "name": "$49,999 (T-1) with no approval",
+    "expect": "allow",
+    "passed": true
+  },
+  {
+    "id": "T-02",
+    "category": "boundary",
+    "name": "$49,999 (T-1) with a valid director approval",
+    "expect": "allow",
+    "passed": true
+  },
+  {
+    "id": "T-03",
+    "category": "boundary",
+    "name": "$50,000 (T) with no approval",
+    "expect": "allow",
+    "passed": true
+  },
+  {
+    "id": "T-04",
+    "category": "boundary",
+    "name": "$50,000 (T) with a valid director approval",
+    "expect": "allow",
+    "passed": true
+  },
+  {
+    "id": "T-05",
+    "category": "missing_evidence",
+    "name": "$50,001 (T+1) with no approval",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-06",
+    "category": "boundary",
+    "name": "$50,001 (T+1) with a valid director approval",
+    "expect": "allow",
+    "passed": true
+  },
+  {
+    "id": "T-07",
+    "category": "boundary",
+    "name": "$500,000 (10T) with no approval",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-08",
+    "category": "boundary",
+    "name": "$500,000 (10T) with a valid director approval",
+    "expect": "allow",
+    "passed": true
+  },
+  {
+    "id": "T-09",
+    "category": "approval",
+    "name": "$50,001 with an expired approval",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-10",
+    "category": "approval",
+    "name": "$50,001 with a manager's approval",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-11",
+    "category": "approval",
+    "name": "$50,001 with the requester's own approval",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-12",
+    "category": "approval",
+    "name": "$50,001 with an invalid approval",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-13",
+    "category": "approval",
+    "name": "$50,001 with an approval already used",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-14",
+    "category": "aggregate",
+    "name": "$40,000 after $40,000 to the same vendor 3h earlier, no approval",
+    "expect": "deny",
+    "passed": true
+  },
+  {
+    "id": "T-15",
+    "category": "aggregate",
+    "name": "$40,000 after $40,000 to the same vendor 25h earlier, no approval",
+    "expect": "allow",
+    "passed": true
+  },
+  {
+    "id": "T-16",
     "category": "incident",
     "name": "the recorded incident: $78,000 with no approval",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-LEG-1",
-    "category": "legitimate",
-    "name": "$12,000 with no approval",
-    "expect": "allow",
-    "passed": true
-  },
-  {
-    "id": "T-LEG-2",
-    "category": "legitimate",
-    "name": "$78,000 with a valid director approval",
-    "expect": "allow",
-    "passed": true
-  },
-  {
-    "id": "T-PRO",
-    "category": "prohibited",
-    "name": "$78,000 with no approval",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-BND-1",
-    "category": "boundary",
-    "name": "exactly $50,000 needs no approval",
-    "expect": "allow",
-    "passed": true
-  },
-  {
-    "id": "T-BND-2",
-    "category": "boundary",
-    "name": "$50,000 plus one cent needs approval",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-BND-3",
-    "category": "boundary",
-    "name": "a prior order older than 24h does not count",
-    "expect": "allow",
-    "passed": true
-  },
-  {
-    "id": "T-BND-4",
-    "category": "boundary",
-    "name": "$30,000 then $20,000 then $1 within 24h is denied",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-MIS",
-    "category": "missing_evidence",
-    "name": "absent amount is denied, not allowed",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-LH-1",
-    "category": "loophole",
-    "name": "Two $40,000 orders to the same vendor, 3 hours apart",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-LH-2",
-    "category": "loophole",
-    "name": "Approval names a different vendor",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-LH-3",
-    "category": "loophole",
-    "name": "Approver is a manager, not a director",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-LH-4",
-    "category": "loophole",
-    "name": "Requester approves their own request",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-LH-5",
-    "category": "loophole",
-    "name": "Approval expired before the request",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-LH-6",
-    "category": "loophole",
-    "name": "Approval issued after the purchase order",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-LH-7",
-    "category": "loophole",
-    "name": "Same approval reused for a second order",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-LH-8",
-    "category": "loophole",
-    "name": "Approval cap is below the commitment",
-    "expect": "deny",
-    "passed": true
-  },
-  {
-    "id": "T-LH-9",
-    "category": "loophole",
-    "name": "EUR 70,000 with no USD conversion record",
     "expect": "deny",
     "passed": true
   }

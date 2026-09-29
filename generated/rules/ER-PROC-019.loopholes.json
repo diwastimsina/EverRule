@@ -1,65 +1,106 @@
 [
   {
-    "id": "LH-1",
+    "id": "LH-01",
+    "category": "boundary",
+    "title": "Just under the threshold: $49,999, no approval",
+    "intent": "allow",
+    "first_draft": "holds",
+    "approved": "holds"
+  },
+  {
+    "id": "LH-02",
+    "category": "boundary",
+    "title": "Exactly at the threshold: $50,000, no approval",
+    "intent": "owner_decides",
+    "first_draft": "owner_decides",
+    "approved": "owner_decides"
+  },
+  {
+    "id": "LH-03",
+    "category": "boundary",
+    "title": "Just over the threshold: $50,001, no approval",
+    "intent": "deny",
+    "first_draft": "holds",
+    "approved": "holds"
+  },
+  {
+    "id": "LH-04",
     "category": "split_aggregate",
     "title": "Two $40,000 orders to the same vendor, 3 hours apart",
-    "initial_allows": true,
-    "improved_allows": false
+    "intent": "deny",
+    "first_draft": "loophole",
+    "approved": "holds"
   },
   {
-    "id": "LH-2",
-    "category": "wrong_scope",
-    "title": "Approval names a different vendor",
-    "initial_allows": true,
-    "improved_allows": false
+    "id": "LH-05",
+    "category": "stale_evidence",
+    "title": "Approval expired one second before the order",
+    "intent": "deny",
+    "first_draft": "holds",
+    "approved": "holds"
   },
   {
-    "id": "LH-3",
+    "id": "LH-06",
+    "category": "timing_reversal",
+    "title": "Approval issued after the order",
+    "intent": "deny",
+    "first_draft": "holds",
+    "approved": "holds"
+  },
+  {
+    "id": "LH-07",
     "category": "wrong_identity",
     "title": "Approver is a manager, not a director",
-    "initial_allows": true,
-    "improved_allows": false
+    "intent": "deny",
+    "first_draft": "holds",
+    "approved": "holds"
   },
   {
-    "id": "LH-4",
+    "id": "LH-08",
     "category": "wrong_identity",
-    "title": "Requester approves their own request",
-    "initial_allows": true,
-    "improved_allows": false
+    "title": "Requester approves their own order",
+    "intent": "deny",
+    "first_draft": "holds",
+    "approved": "holds"
   },
   {
-    "id": "LH-5",
-    "category": "stale_evidence",
-    "title": "Approval expired before the request",
-    "initial_allows": true,
-    "improved_allows": false
+    "id": "LH-09",
+    "category": "wrong_scope",
+    "title": "Approval is for a different order",
+    "intent": "deny",
+    "first_draft": "holds",
+    "approved": "holds"
   },
   {
-    "id": "LH-6",
-    "category": "timing_reversal",
-    "title": "Approval issued after the purchase order",
-    "initial_allows": true,
-    "improved_allows": false
-  },
-  {
-    "id": "LH-7",
+    "id": "LH-10",
     "category": "replay_reuse",
     "title": "Same approval reused for a second order",
-    "initial_allows": true,
-    "improved_allows": false
+    "intent": "deny",
+    "first_draft": "holds",
+    "approved": "holds"
   },
   {
-    "id": "LH-8",
-    "category": "boundary",
-    "title": "Approval cap is below the commitment",
-    "initial_allows": true,
-    "improved_allows": false
+    "id": "LH-11",
+    "category": "invalid_evidence",
+    "title": "Approval record marked invalid",
+    "intent": "deny",
+    "first_draft": "holds",
+    "approved": "holds"
   },
   {
-    "id": "LH-9",
+    "id": "LH-12",
     "category": "alternate_currency",
-    "title": "EUR 70,000 with no USD conversion record",
-    "initial_allows": true,
-    "improved_allows": false
+    "title": "EUR 50,001 with no USD conversion record",
+    "intent": "deny",
+    "first_draft": "holds",
+    "approved": "holds"
+  },
+  {
+    "id": "LH-13",
+    "category": "boundary",
+    "title": "Ten times the threshold: $500,000, no approval",
+    "intent": "deny",
+    "first_draft": "holds",
+    "approved": "holds"
   }
 ]
