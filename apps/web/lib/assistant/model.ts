@@ -8,7 +8,11 @@ import { CandidateRule, IncidentAnalysis, Loophole, RuleParams } from "@everrule
 import type { IncidentInput } from "@everrule/rule-schema";
 import type { RuleAssistant } from "./types";
 
-const MODEL = process.env.LLM_MODEL ?? "";
+const model = () => {
+  const m = process.env.LLM_MODEL;
+  if (!m) throw new Error("LLM_MODEL is not set");
+  return m;
+};
 
 const SYSTEM = `You are EverRule's analyst. You turn evidence about an AI-agent incident into a plain-English timeline, a candidate prevention rule, and loophole cases.
 Rules you must follow:
@@ -25,7 +29,7 @@ export class ModelAssistant implements RuleAssistant {
   async analyzeIncident(input: IncidentInput): Promise<IncidentAnalysis> {
     const evidence = input.files.map((f) => `### ${f.name}\n${f.content}`).join("\n\n");
     const res = await this.client.messages.parse({
-      model: MODEL,
+      model: model(),
       max_tokens: 16000,
       system: SYSTEM,
       messages: [{ role: "user", content: `Description from the customer: ${input.description}\nStated impact: ${input.impact_amount ?? "not stated"}\n\nEvidence files:\n\n${evidence}\n\nProduce the incident analysis. Use incident_id INC-482 if the evidence names it. vendor_id and amount must come from the evidence.` }],
@@ -38,7 +42,7 @@ export class ModelAssistant implements RuleAssistant {
   async proposeRule(analysis: IncidentAnalysis): Promise<CandidateRule> {
     const Proposal = z.object({ plain_english: z.string(), threshold: z.number(), evidence_citations: z.array(z.string()), assumptions: z.array(z.string()), missing_evidence: z.array(z.string()) });
     const res = await this.client.messages.parse({
-      model: MODEL,
+      model: model(),
       max_tokens: 16000,
       system: SYSTEM,
       messages: [{ role: "user", content: `Incident analysis:\n${JSON.stringify(analysis, null, 2)}\n\nPropose the single most obvious prevention rule the incident reveals, as the business would first state it. One sentence. State the USD threshold as a number.` }],
@@ -56,7 +60,7 @@ export class ModelAssistant implements RuleAssistant {
 
   async findLoopholes(rule: CandidateRule): Promise<Loophole[]> {
     const res = await this.client.messages.parse({
-      model: MODEL,
+      model: model(),
       max_tokens: 16000,
       system: SYSTEM,
       messages: [{ role: "user", content: `Candidate rule:\n${JSON.stringify(rule, null, 2)}\n\nList concrete ways the literal rule can be satisfied while the business intent is violated. Use these categories: split_aggregate, wrong_scope, wrong_identity, stale_evidence, timing_reversal, replay_reuse, boundary, alternate_currency. Each loophole is a concrete scenario with amounts, vendor VEND-2291, requester procurement-agent, and an approval record where relevant. Aim for 6 to 9 cases. Ids LH-1, LH-2, ...` }],
@@ -69,7 +73,7 @@ export class ModelAssistant implements RuleAssistant {
   async improveRule(rule: CandidateRule, loopholes: Loophole[]): Promise<CandidateRule> {
     const Improved = z.object({ plain_english: z.string(), params: RuleParams, assumptions: z.array(z.string()) });
     const res = await this.client.messages.parse({
-      model: MODEL,
+      model: model(),
       max_tokens: 16000,
       system: SYSTEM,
       messages: [{ role: "user", content: `Initial rule:\n${JSON.stringify(rule, null, 2)}\n\nLoopholes found:\n${JSON.stringify(loopholes.map((l) => ({ category: l.category, title: l.title })), null, 2)}\n\nRewrite the rule so every listed loophole is closed. Keep the threshold. Set aggregate by vendor with a 24 hour window and turn on every approval requirement the loopholes justify. One or two sentences of plain English. Missing evidence must mean refuse.` }],
